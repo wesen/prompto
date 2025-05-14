@@ -60,6 +60,9 @@ func main() {
 	repositories := viper.GetStringSlice("repositories")
 	options := cmds.NewCommandOptions(repositories)
 
+	// Add the TUI command
+	rootCmd.AddCommand(NewTUICommand())
+	
 	for _, cmd := range cmds.NewCommands(options) {
 		rootCmd.AddCommand(cmd)
 	}

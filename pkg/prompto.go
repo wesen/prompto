@@ -22,6 +22,20 @@ const (
 	TemplateCommand
 )
 
+// String returns the string representation of a FileType
+func (ft FileType) String() string {
+	switch ft {
+	case Plain:
+		return "Plain"
+	case Executable:
+		return "Executable"
+	case TemplateCommand:
+		return "Template Command"
+	default:
+		return "Unknown"
+	}
+}
+
 type Prompto struct {
 	Name       string
 	Group      string
