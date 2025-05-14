@@ -62,7 +62,7 @@ func main() {
 
 	// Add the TUI command
 	rootCmd.AddCommand(NewTUICommand())
-	
+
 	for _, cmd := range cmds.NewCommands(options) {
 		rootCmd.AddCommand(cmd)
 	}

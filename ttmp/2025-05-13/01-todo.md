@@ -1,0 +1,4 @@
+- [ ] refresh doesn't work (do we even need it?)
+- [ ] log display is interfering with the UI
+  - [ ] I think it's actually the logger the watcher uses which doesn't use the glazed configured one 
+- [ ] choosing a prompt should close the TUI and print it, or show it in a scrollview or something

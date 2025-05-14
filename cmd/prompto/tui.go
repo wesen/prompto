@@ -15,9 +15,9 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/go-go-golems/glazed/pkg/cmds/logging"
 	"github.com/go-go-golems/prompto/pkg"
 	"github.com/go-go-golems/prompto/pkg/repositories"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -25,8 +25,8 @@ import (
 
 // Define styles
 var (
-	TitleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FFA500"))
-	StatusStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#BBBBBB"))
+	TitleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FFA500"))
+	StatusStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#BBBBBB"))
 	SelectedStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#00FF00"))
 )
 
@@ -38,34 +38,34 @@ type PromptItem struct {
 
 func (i PromptItem) Title() string       { return i.prompto.Name }
 func (i PromptItem) Description() string { return i.prompto.Type.String() }
-func (i PromptItem) FilterValue() string  { return i.prompto.Name }
+func (i PromptItem) FilterValue() string { return i.prompto.Name }
 
 // RepositoryItem represents a selectable repository
 type RepositoryItem struct {
-	name      string
-	path      string
+	name       string
+	path       string
 	repository *pkg.Repository
 	itemCount  int
 }
 
 func (i RepositoryItem) Title() string       { return i.name }
 func (i RepositoryItem) Description() string { return fmt.Sprintf("%d prompts", i.itemCount) }
-func (i RepositoryItem) FilterValue() string  { return i.name }
+func (i RepositoryItem) FilterValue() string { return i.name }
 
 // KeyMap defines keybindings
 type KeyMap struct {
-	Up       key.Binding
-	Down     key.Binding
-	Select   key.Binding
-	Add      key.Binding
-	Edit     key.Binding
-	Delete   key.Binding
+	Up            key.Binding
+	Down          key.Binding
+	Select        key.Binding
+	Add           key.Binding
+	Edit          key.Binding
+	Delete        key.Binding
 	DeleteConfirm key.Binding
-	Filter   key.Binding
-	Refresh  key.Binding
-	Back     key.Binding
-	Quit     key.Binding
-	Help     key.Binding
+	Filter        key.Binding
+	Refresh       key.Binding
+	Back          key.Binding
+	Quit          key.Binding
+	Help          key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view
@@ -147,19 +147,19 @@ const (
 
 // Model holds the state of the TUI
 type Model struct {
-	repositories    []pkg.Repository
-	repoList        list.Model
-	promptList      list.Model
-	filterInput     textinput.Model
-	filePicker      filepicker.Model
-	currentPage     Page
-	selectedRepo    int
-	selectedPrompt  int
-	confirmDelete   bool
-	status          string
-	filtering       bool
-	help            help.Model
-	keyMap          KeyMap
+	repositories   []pkg.Repository
+	repoList       list.Model
+	promptList     list.Model
+	filterInput    textinput.Model
+	filePicker     filepicker.Model
+	currentPage    Page
+	selectedRepo   int
+	selectedPrompt int
+	confirmDelete  bool
+	status         string
+	filtering      bool
+	help           help.Model
+	keyMap         KeyMap
 }
 
 // Init is called once when the program starts
@@ -181,8 +181,8 @@ func NewModel(repositoryPaths []string) (Model, error) {
 		r := repo // local copy
 		promptCount := len(r.GetPromptos())
 		repoItems[i] = RepositoryItem{
-			name:      r.Path,
-			path:      r.Path,
+			name:       r.Path,
+			path:       r.Path,
 			repository: &r,
 			itemCount:  promptCount,
 		}
@@ -319,7 +319,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.String() == "enter" && m.filePicker.CurrentDirectory != "" {
 				// Add the selected directory as a repository
 				selectedDir := m.filePicker.CurrentDirectory
-				
+
 				// Create a new repository
 				newRepo := pkg.NewRepository(selectedDir)
 				err := newRepo.LoadPromptos()
@@ -505,7 +505,7 @@ func (m Model) View() string {
 			promptView = m.promptList.View()
 		}
 		content = BorderStyle.Render(promptView)
-		
+
 	case PageDeleteConfirm:
 		// Show confirmation dialog based on which list we were viewing
 		if m.repoList.Items() != nil && len(m.repoList.Items()) > 0 {
@@ -513,7 +513,7 @@ func (m Model) View() string {
 		} else {
 			content = BorderStyle.Render(m.promptList.View())
 		}
-		
+
 	case PageFilePicker:
 		content = BorderStyle.Render(m.filePicker.View())
 	}
@@ -535,10 +535,12 @@ func (m *Model) updateRepositoryList() {
 	items := make([]list.Item, len(m.repositories))
 	for i, repo := range m.repositories {
 		repo := repo // local copy
+		promptCount := len(repo.GetPromptos())
 		items[i] = RepositoryItem{
-			name:      repo.Path,
-			path:      repo.Path,
+			name:       repo.Path,
+			path:       repo.Path,
 			repository: &repo,
+			itemCount:  promptCount,
 		}
 	}
 	m.repoList.SetItems(items)
@@ -626,7 +628,7 @@ func (m *Model) editPrompt(prompt pkg.Prompto) tea.Cmd {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		_ = cmd.Run()
-		
+
 		return refreshPromptsMsg{}
 	}
 }
@@ -646,14 +648,14 @@ func (m *Model) addNewPrompt() tea.Cmd {
 		// This is a simplistic implementation - would need more UI to get user input
 		repo := m.repositories[m.selectedRepo]
 		promptDir := fmt.Sprintf("%s/prompto/new", repo.Path)
-		
+
 		// Ensure the directory exists
 		err := os.MkdirAll(promptDir, 0755)
 		if err != nil {
 			m.status = fmt.Sprintf("Error creating directory: %v", err)
 			return nil
 		}
-		
+
 		// Create a new prompt file
 		filePath := fmt.Sprintf("%s/new_prompt.txt", promptDir)
 		f, err := os.Create(filePath)
@@ -662,20 +664,20 @@ func (m *Model) addNewPrompt() tea.Cmd {
 			return nil
 		}
 		f.Close()
-		
+
 		// Open the new file in editor
 		editor := os.Getenv("EDITOR")
 		if editor == "" {
 			editor = "vi"
 		}
-		
+
 		// Execute the editor
 		cmd := exec.Command(editor, filePath)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		_ = cmd.Run()
-		
+
 		// Refresh the prompt list
 		return refreshPromptsMsg{}
 	}
@@ -699,13 +701,11 @@ func NewTUICommand() *cobra.Command {
 				return fmt.Errorf("no repositories configured - add repositories to your config file")
 			}
 
-			// Create logger that doesn't interfere with the UI
-			zlog := zerolog.New(zerolog.NewConsoleWriter(
-				func(w *zerolog.ConsoleWriter) {
-					w.Out = os.Stderr
-					w.NoColor = false
-				}))
-			log.Logger = zlog
+			// Initialize logger which properly handles alt-screen mode
+			err := logging.InitLoggerFromViper()
+			if err != nil {
+				return err
+			}
 
 			// Create and start the model
 			p := tea.NewProgram(
